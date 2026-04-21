@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SMTP_USER = exports.SMTP_PORT = exports.SMTP_PASSWORD_KEY = exports.REFRESH_EXPIRES_IN = exports.TOKEN_EXPIRES_IN = exports.ADMIN_REFRESH_TOKEN_SECRET_KEY = exports.ADMIN_ACCESS_TOKEN_SECRET_KEY = exports.REFRESH_TOKEN_SECRET_KEY = exports.ACCESS_TOKEN_SECRET_KEY = exports.IV_LENGTH = exports.ENCRYPTION_SECRET_KEY = exports.REDIS_URL = exports.PORT = exports.DB_URI = void 0;
+exports.DB_URI = "mongodb://127.0.0.1:27017/social-media";
+exports.PORT = process.env.PORT;
+exports.REDIS_URL = process.env.REDIS_URL;
+exports.ENCRYPTION_SECRET_KEY = process.env.ENCRYPTION_SECRET_KEY;
+exports.IV_LENGTH = process.env.IV_LENGTH;
+exports.ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET;
+exports.REFRESH_TOKEN_SECRET_KEY = process.env.REFRESH_TOKEN_SECRET_KEY;
+exports.ADMIN_ACCESS_TOKEN_SECRET_KEY = process.env.ADMIN_ACCESS_TOKEN_SECRET;
+exports.ADMIN_REFRESH_TOKEN_SECRET_KEY = process.env.ADMIN_REFRESH_TOKEN_SECRET_KEY;
+exports.TOKEN_EXPIRES_IN = process.env.TOKEN_EXPIRES_IN;
+exports.REFRESH_EXPIRES_IN = process.env.REFRESH_EXPIRES_IN;
+exports.SMTP_PASSWORD_KEY = process.env.SMTP_PASSWORD_KEY;
+exports.SMTP_PORT = process.env.SMTP_PORT;
+exports.SMTP_USER = process.env.SMTP_USER;
