@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response, Router } from "express";
-import { authenticateUser } from "../../middlewares";
+import { authenticateUser, validation } from "../../middlewares";
 import { commentService } from "./comment.service";
 import { successResponse } from "../../common/response";
+import { addCommentSchema } from "./validation/comment.validation";
 
 const router = Router({ mergeParams: true });
 //post/postId/comment =>> commenting direct on post
@@ -9,6 +10,7 @@ const router = Router({ mergeParams: true });
 router.post(
   "{/:parentId}",
   authenticateUser("strict"),
+  validation(addCommentSchema.body),
   async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user._id;
     const comment = await commentService.addComment(
