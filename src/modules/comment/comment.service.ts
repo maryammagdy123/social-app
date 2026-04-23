@@ -1,9 +1,9 @@
 import { Types } from "mongoose";
-import { IAddCommentDTO } from "./comment.dto";
+
 import { PostRepository } from "../../DB/models/post";
 import { BadRequestError, NotFoundError } from "../../common/exceptions";
 import { CommentRepository } from "../../DB/models/comment/comment.repository";
-
+import { AddCommentDTO } from "./comment.dto";
 
 class CommentService {
   constructor(
@@ -12,7 +12,7 @@ class CommentService {
   ) {}
 
   public addComment = async (
-    addCommentDTO: IAddCommentDTO,
+    addCommentDTO: AddCommentDTO,
     params: any,
     userId: Types.ObjectId,
   ) => {
