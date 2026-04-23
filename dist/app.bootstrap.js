@@ -20,9 +20,10 @@ const bootstrap = async () => {
     app.get("/", (req, res, next) => {
         res.status(200).json("Hello, World!");
     });
-    app.use("/api/auth", modules_1.authRouter);
-    app.use("/api/user", user_1.userRouter);
-    app.use("/api/post", modules_1.postRouter);
+    app.use("/auth", modules_1.authRouter);
+    app.use("/user", user_1.userRouter);
+    app.use("/post", modules_1.postRouter);
+    app.use("/comment", modules_1.commentRouter);
     app.get("/*dummy", (req, res, next) => {
         res.status(404).json("Not Found");
     });
