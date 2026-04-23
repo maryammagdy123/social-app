@@ -18,3 +18,4 @@ __exportStar(require("./erequest.interface"), exports);
 __exportStar(require("./user.interface"), exports);
 __exportStar(require("./post.interface"), exports);
 __exportStar(require("./user-reaction.interface"), exports);
+__exportStar(require("./comment.interface"), exports);
