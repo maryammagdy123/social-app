@@ -4,7 +4,7 @@ exports.PostModel = exports.schema = void 0;
 const mongoose_1 = require("mongoose");
 exports.schema = new mongoose_1.Schema({
     userId: {
-        type: mongoose_1.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },

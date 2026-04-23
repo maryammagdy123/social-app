@@ -1,10 +1,10 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import { PostDocument } from "../../../common/types/post.types";
 
 export const schema = new Schema<PostDocument>(
   {
     userId: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },

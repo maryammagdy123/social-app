@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import {
   Model,
   MongooseUpdateQueryOptions,
@@ -32,7 +33,7 @@ export abstract class AbstractDBRepository<T> {
     return this._model.find(filter, projection, options);
   }
   public findById(
-    id: ObjectId | string,
+    id: Types.ObjectId | string,
     projection?: ProjectionType<T>,
     options?: QueryOptions,
   ) {

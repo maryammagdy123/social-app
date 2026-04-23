@@ -15,50 +15,59 @@ export class PostService {
     createPostDTO: CreatePostDTO,
     userId: Types.ObjectId,
   ) => {
-    let { attachments, content } = createPostDTO;
+
     return await this.postRepo.create({
-      attachments,
-      content,
+...createPostDTO,
       userId,
     });
   };
 
-  reactToPost = async (
-    postReactionDTO: PostReactionDTO,
-    userId: Types.ObjectId,
-  ) => {
-    //check post existence
-    const postExist = await this.postRepo.findById(postReactionDTO.postId);
-    if (!postExist) {
-      throw new NotFoundError(
-        "can not react to this post , post is unavailable right now",
-      );
-    }
-    //check if user has been reacted already , if not add a reaction
-    const userReacted = await this.userReactionRepo.findOne({
+reactToPost = async (
+  postReactionDTO: PostReactionDTO,
+  userId: Types.ObjectId,
+) => {
+  const post = await this.postRepo.findById(postReactionDTO.postId);
+
+  if (!post) {
+    throw new NotFoundError("post not found");
+  }
+
+  const existingReaction = await this.userReactionRepo.findOne({
+    userId,
+    refId: postReactionDTO.postId,
+  });
+
+  //  add reaction
+  if (!existingReaction) {
+    await this.postRepo.updateOne(
+      { _id: postReactionDTO.postId },
+      { $inc: { reactionsCount: 1 } }
+    );
+
+    return await this.userReactionRepo.create({
+      onModel: ON_MODEL.Post,
+      type: postReactionDTO.type,
+      refId: post._id,
       userId,
-      refId: postReactionDTO.postId,
     });
-    if (!userReacted) {
-      return await this.userReactionRepo.create({
-        onModel: ON_MODEL.Post,
-        type: postReactionDTO.type,
-        refId: new Types.ObjectId(postReactionDTO.postId),
-        userId,
-      });
-    }
-    //if user add the same reaction to the post , then the reaction has to be removed
-    if (userReacted) {
-      if (userReacted.type !== postReactionDTO.type) {
-        userReacted.type = postReactionDTO.type;
-        await userReacted.save();
-       await this.postRepo.updateOne({_id:postReactionDTO.postId},{$inc:{reactionsCount:1}})
-      }
+  }
 
-    }
+  //  change reaction type
+  if (existingReaction.type !== postReactionDTO.type) {
+    existingReaction.type = postReactionDTO.type;
+    return await existingReaction.save();
+  }
 
-    return await this.userReactionRepo.findByIdAndDelete(postReactionDTO.postId);
-  };
+  // remove reaction
+ if(post.reactionsCount!==0){
+ await this.postRepo.updateOne(
+    { _id: postReactionDTO.postId },
+    { $inc: { reactionsCount: -1 } }
+  );
+ }
+
+  return await this.userReactionRepo.findByIdAndDelete(existingReaction._id);
+};
 }
 export const postService = new PostService(
   new PostRepository(),

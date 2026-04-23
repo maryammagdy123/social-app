@@ -5,11 +5,11 @@ const mongoose_1 = require("mongoose");
 const common_1 = require("../../../common");
 const schema = new mongoose_1.Schema({
     userId: {
-        type: mongoose_1.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         ref: "User",
     },
     refId: {
-        type: mongoose_1.Types.ObjectId,
+        type: mongoose_1.Schema.Types.ObjectId,
         refPath: "onModel",
         required: true,
     },

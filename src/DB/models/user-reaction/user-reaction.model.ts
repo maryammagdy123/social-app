@@ -1,15 +1,15 @@
-import { model, Schema, Types } from "mongoose";
+import { model, Schema } from "mongoose";
 import { UserReactionDocument } from "../../../common/types/user-reaction.types";
 import { ON_MODEL, REACTION_ENUM } from "../../../common";
 
 const schema = new Schema<UserReactionDocument>(
   {
     userId: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
     },
     refId: {
-      type: Types.ObjectId,
+      type: Schema.Types.ObjectId,
       refPath: "onModel",
       required: true,
     },
