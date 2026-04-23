@@ -22,6 +22,10 @@ exports.schema = new mongoose_1.Schema({
         type: Number,
         default: 0,
     },
+    commentDisabled: {
+        type: Boolean,
+        default: false
+    }
 }, {
     timestamps: true,
 });

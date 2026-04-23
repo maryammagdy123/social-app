@@ -1,4 +1,4 @@
-import { redisService,, TokenService } from "../../common";
+import { redisService, TokenService } from "../../common";
 import { BadRequestError, NotFoundError } from "../../common/exceptions";
 import { REFRESH_TOKEN_SECRET_KEY } from "../../config";
 
@@ -28,24 +28,24 @@ export class UserService {
     return true;
   };
 
-public logoutAllSessions = async (token: string) => {
-  const decoded = this.tokenService.verifyToken(
-    token,
-    REFRESH_TOKEN_SECRET_KEY as string,
-  );
+  public logoutAllSessions = async (token: string) => {
+    const decoded = this.tokenService.verifyToken(
+      token,
+      REFRESH_TOKEN_SECRET_KEY as string,
+    );
 
-  const userId = decoded?.id;
+    const userId = decoded?.id;
 
-  // delete all set that contains all users devices sessions
-  const sessions = await redisService.sMembers(
-    redisService.allSessionsSetKey(userId),
-  );
-  await Promise.all(
-    sessions.map((sessionId) =>
-    redisService.sRem(redisService.allSessionsSetKey(userId),sessionId)
-      )
-    )
-  return true;
-};
+    // delete all set that contains all users devices sessions
+    const sessions = await redisService.sMembers(
+      redisService.allSessionsSetKey(userId),
+    );
+    await Promise.all(
+      sessions.map((sessionId) =>
+        redisService.sRem(redisService.allSessionsSetKey(userId), sessionId),
+      ),
+    );
+    return true;
+  };
 }
 export const userService = new UserService(new TokenService());

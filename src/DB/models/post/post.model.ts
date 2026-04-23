@@ -22,6 +22,10 @@ export const schema = new Schema<PostDocument>(
       type: Number,
       default: 0,
     },
+    commentDisabled:{
+      type:Boolean,
+      default:false //by default commenting on post is allowed
+    }
   },
   {
     timestamps: true,
