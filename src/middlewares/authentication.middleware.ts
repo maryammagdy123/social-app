@@ -50,10 +50,9 @@ export const authenticateUser = (
           redisService.sessionKey(id, sessionId),
         );
         throw new BadRequestError("Session expired , login again !");
-
       }
       req.user = user;
-      
+
       // ✅ check roles
       if (roles.length > 0) {
         if (!roles.includes(user!.role)) {

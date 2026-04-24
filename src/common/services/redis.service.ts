@@ -32,7 +32,7 @@ export class RedisService {
   };
   //user session (per device) key
   public sessionKey = (userId: Types.ObjectId, sessionId: string) => {
-    return ` refresh:${userId}:${sessionId}`;
+    return `refresh:${userId}:${sessionId}`;
   };
   // //for blacklisted access tokens key
   // public blacklistedKey = (userId: Types.ObjectId, token: string) => {
@@ -64,11 +64,11 @@ export class RedisService {
     const formattedValue =
       typeof value === "object" ? JSON.stringify(value) : value;
 
-    return this.redisClient.set(key, formattedValue, { EX: ex });
+    return await this.redisClient.set(key, formattedValue, { EX: ex });
   };
 
-  public deleteFromCache = async (key: string): Promise<number> => {
-    return this.redisClient.del(key);
+  public deleteFromCache = async (key: string | string[]): Promise<number> => {
+    return await this.redisClient.del(key);
   };
 
   public checkKeyExistence = async (key: string): Promise<number> => {
@@ -107,7 +107,10 @@ export class RedisService {
     return this.redisClient.sRem(key, member);
   };
   public sIsMember = async (key: string, member: string) => {
-    return this.redisClient.sIsMember(key, member);
+    return await this.redisClient.sIsMember(key, member);
+  };
+  public keys = async (userId: Types.ObjectId) => {
+    return await this.redisClient.keys(`refresh:${userId}:*`);
   };
 }
 export const redisService = new RedisService();

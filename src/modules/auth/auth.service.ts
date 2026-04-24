@@ -26,6 +26,7 @@ import {
   ACCESS_TOKEN_SECRET_KEY,
   REFRESH_TOKEN_SECRET_KEY,
 } from "../../config";
+import { Types } from "mongoose";
 
 class AuthenticationService {
   private readonly userRepo: UserRepository;
@@ -223,7 +224,7 @@ class AuthenticationService {
     return data;
   };
 
-  public sessionLogout = async (token:string) => {
+  public sessionLogout = async (token: string) => {
     const tokenService = new TokenService();
 
     const decoded = tokenService.verifyToken(
@@ -239,12 +240,12 @@ class AuthenticationService {
     }
     return true;
   };
-  public logoutAllSessions = async () => {
-    //     const sessions = await redis.sMembers(`user_sessions:${userId}`);
-    // for (const s of sessions) {
-    //   await redis.del(`refresh:${userId}:${s}`);
-    // }
-    // await redis.del(`user_sessions:${userId}`);
+  public logoutAllSessions = async (userId: Types.ObjectId) => {
+    const sessions = await redisService.sMembers(`user_sessions:${userId}`);
+
+    for (const s of sessions) {
+      await redisService.deleteFromCache(`refresh:${userId}:${s}`);
+    }
   };
 }
 

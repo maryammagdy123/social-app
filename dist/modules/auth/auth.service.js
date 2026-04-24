@@ -155,7 +155,11 @@ class AuthenticationService {
         }
         return true;
     };
-    logoutAllSessions = async () => {
+    logoutAllSessions = async (userId) => {
+        const sessions = await common_1.redisService.sMembers(`user_sessions:${userId}`);
+        for (const s of sessions) {
+            await common_1.redisService.deleteFromCache(`refresh:${userId}:${s}`);
+        }
     };
 }
 exports.default = new AuthenticationService();

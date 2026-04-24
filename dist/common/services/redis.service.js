@@ -27,7 +27,7 @@ class RedisService {
         return `user_sessions:${userId}`;
     };
     sessionKey = (userId, sessionId) => {
-        return ` refresh:${userId}:${sessionId}`;
+        return `refresh:${userId}:${sessionId}`;
     };
     otpKey = (email, purpose) => {
         return `OTP::${purpose}::${email}`;
@@ -48,10 +48,10 @@ class RedisService {
     };
     saveInCache = async (key, value, ex = 5 * 60) => {
         const formattedValue = typeof value === "object" ? JSON.stringify(value) : value;
-        return this.redisClient.set(key, formattedValue, { EX: ex });
+        return await this.redisClient.set(key, formattedValue, { EX: ex });
     };
     deleteFromCache = async (key) => {
-        return this.redisClient.del(key);
+        return await this.redisClient.del(key);
     };
     checkKeyExistence = async (key) => {
         return await this.redisClient.exists(key);
@@ -74,7 +74,10 @@ class RedisService {
         return this.redisClient.sRem(key, member);
     };
     sIsMember = async (key, member) => {
-        return this.redisClient.sIsMember(key, member);
+        return await this.redisClient.sIsMember(key, member);
+    };
+    keys = async (userId) => {
+        return await this.redisClient.keys(`refresh:${userId}:*`);
     };
 }
 exports.RedisService = RedisService;
