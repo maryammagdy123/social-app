@@ -2,11 +2,21 @@ import { NextFunction, Request, Response, Router } from "express";
 import { authenticateUser, validation } from "../../middlewares";
 import { commentService } from "./comment.service";
 import { successResponse } from "../../common/response";
-import { addCommentSchema } from "./validation/comment.validation";
+import { addCommentSchema, reactToCommentSchema } from "./validation/comment.validation";
 
 const router = Router({ mergeParams: true });
 //post/postId/comment =>> commenting direct on post
 //post/postId/comment/commentId =>> commenting (replying) on a comment
+
+router.post(
+  "/react-to-comment",
+  authenticateUser("strict"),
+  validation(reactToCommentSchema.body),
+  async (req: Request, res: Response, next: NextFunction) => {
+    await commentService.addReaction(req.body,req.user._id)
+    res.sendStatus(204);
+  },
+);
 router.post(
   "{/:parentId}",
   authenticateUser("strict"),

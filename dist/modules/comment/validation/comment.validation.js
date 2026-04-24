@@ -3,9 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addCommentSchema = void 0;
+exports.reactToCommentSchema = exports.addCommentSchema = void 0;
 const mongoose_1 = require("mongoose");
 const zod_1 = __importDefault(require("zod"));
+const common_1 = require("../../../common");
 exports.addCommentSchema = {
     body: zod_1.default
         .strictObject({
@@ -20,5 +21,11 @@ exports.addCommentSchema = {
     })
         .refine((data) => data.content || data.attachment, {
         message: "Comment cannot be empty",
+    }),
+};
+exports.reactToCommentSchema = {
+    body: zod_1.default.strictObject({
+        commentId: zod_1.default.string(),
+        type: zod_1.default.enum(common_1.REACTION_ENUM),
     }),
 };

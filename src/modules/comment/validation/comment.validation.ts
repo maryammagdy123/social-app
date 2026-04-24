@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import z from "zod";
+import { REACTION_ENUM } from "../../../common";
 
 export const addCommentSchema = {
   body: z
@@ -18,4 +19,11 @@ export const addCommentSchema = {
     .refine((data) => data.content || data.attachment, {
       message: "Comment cannot be empty",
     }),
+};
+
+export const reactToCommentSchema = {
+  body: z.strictObject({
+    commentId: z.string(),
+    type: z.enum(REACTION_ENUM),
+  }),
 };

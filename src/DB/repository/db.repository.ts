@@ -48,7 +48,7 @@ export abstract class AbstractDBRepository<T> {
     options.returnDocument = "after";
     return this._model.findByIdAndUpdate(id, update, options);
   }
-  public findByIdAndDelete(id: ObjectId) {
+  public findByIdAndDelete(id: Types.ObjectId) {
     return this._model.findByIdAndDelete(id);
   }
 

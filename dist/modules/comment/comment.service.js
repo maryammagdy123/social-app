@@ -1,15 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.commentService = void 0;
-const post_1 = require("../../DB/models/post");
 const exceptions_1 = require("../../common/exceptions");
-const comment_repository_1 = require("../../DB/models/comment/comment.repository");
+const DB_1 = require("../../DB");
+const common_1 = require("../../common");
 class CommentService {
     postRepository;
     commentRepository;
-    constructor(postRepository, commentRepository) {
+    userReactionRepository;
+    constructor(postRepository, commentRepository, userReactionRepository) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
+        this.userReactionRepository = userReactionRepository;
     }
     addComment = async (addCommentDTO, params, userId) => {
         const existingPost = await this.postRepository.findById(params.postId);
@@ -37,5 +39,28 @@ class CommentService {
         await this.postRepository.updateOne({ _id: params.postId }, { $inc: { commentsCount: 1 } });
         return comment;
     };
+    addReaction = async (reactToCommentDTO, userId) => {
+        const existingComment = await this.commentRepository.findById(reactToCommentDTO.commentId);
+        if (!existingComment) {
+            throw new exceptions_1.NotFoundError("Comment not available , cannot react!");
+        }
+        const existingReaction = await this.userReactionRepository.findOne({
+            userId,
+            refId: reactToCommentDTO.commentId,
+        });
+        if (existingReaction) {
+            if (existingReaction.type !== reactToCommentDTO.type) {
+                existingReaction.type = reactToCommentDTO.type;
+                return await existingReaction.save();
+            }
+            return await this.userReactionRepository.findByIdAndDelete(existingReaction._id);
+        }
+        return await this.userReactionRepository.create({
+            userId,
+            ...reactToCommentDTO,
+            onModel: common_1.ON_MODEL.Comment,
+            refId: existingComment._id
+        });
+    };
 }
-exports.commentService = new CommentService(new post_1.PostRepository(), new comment_repository_1.CommentRepository());
+exports.commentService = new CommentService(new DB_1.PostRepository(), new DB_1.CommentRepository(), new DB_1.UserReactionRepository());
