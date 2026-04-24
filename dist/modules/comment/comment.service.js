@@ -59,8 +59,40 @@ class CommentService {
             userId,
             ...reactToCommentDTO,
             onModel: common_1.ON_MODEL.Comment,
-            refId: existingComment._id
+            refId: existingComment._id,
         });
+    };
+    getAllComments = async (params) => {
+        const post = await this.postRepository.findById(params.postId);
+        if (!post) {
+            throw new exceptions_1.NotFoundError("Post is not available can not get comments");
+        }
+        if (post) {
+            if (post.commentsCount == 0) {
+                throw new exceptions_1.BadRequestError("This post has no comments");
+            }
+            if (params.postId && params.parentId !== "") {
+                console.log(params);
+                const existingComment = await this.commentRepository.findById(params.parentId);
+                if (!existingComment) {
+                    throw new exceptions_1.NotFoundError("Comment not available or might be deleted");
+                }
+                const comments = await this.commentRepository.find({
+                    postId: params.postId,
+                    parentId: params.parentId,
+                });
+                return comments;
+            }
+            if (params.postId) {
+                const comments = await this.commentRepository.find({
+                    postId: params.postId,
+                });
+                console.log(comments);
+                console.log(params);
+                return comments;
+            }
+        }
+        return;
     };
 }
 exports.commentService = new CommentService(new DB_1.PostRepository(), new DB_1.CommentRepository(), new DB_1.UserReactionRepository());

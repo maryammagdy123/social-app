@@ -81,19 +81,57 @@ class CommentService {
     if (existingReaction) {
       if (existingReaction.type !== reactToCommentDTO.type) {
         existingReaction.type = reactToCommentDTO.type;
-       return await existingReaction.save();
+        return await existingReaction.save();
         // TODO increase likes count on comment , add likesCount on comment model
       }
       // if the same reaction - remove reaction
-      return await this.userReactionRepository.findByIdAndDelete(existingReaction._id);
+      return await this.userReactionRepository.findByIdAndDelete(
+        existingReaction._id,
+      );
     }
     //if user does  not reacted to this comment before , make a new react
     return await this.userReactionRepository.create({
       userId,
       ...reactToCommentDTO,
       onModel: ON_MODEL.Comment,
-      refId:existingComment._id
+      refId: existingComment._id,
     });
+  };
+  public getAllComments = async (params: any) => {
+    const post = await this.postRepository.findById(params.postId);
+    if (!post) {
+      throw new NotFoundError("Post is not available can not get comments");
+    }
+    if (post) {
+      if (post.commentsCount == 0) {
+        throw new BadRequestError("This post has no comments");
+      }
+      if (params.postId && params.parentId !== "") {
+        console.log(params);
+        const existingComment = await this.commentRepository.findById(
+          params.parentId,
+        );
+
+        if (!existingComment) {
+          throw new NotFoundError("Comment not available or might be deleted");
+        }
+
+        const comments = await this.commentRepository.find({
+          postId: params.postId,
+          parentId: params.parentId,
+        });
+        return comments;
+      }
+      if (params.postId) {
+        const comments = await this.commentRepository.find({
+          postId: params.postId,
+        });
+        console.log(comments);
+        console.log(params);
+        return comments;
+      }
+    }
+    return;
   };
 }
 

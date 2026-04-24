@@ -2,7 +2,10 @@ import { NextFunction, Request, Response, Router } from "express";
 import { authenticateUser, validation } from "../../middlewares";
 import { commentService } from "./comment.service";
 import { successResponse } from "../../common/response";
-import { addCommentSchema, reactToCommentSchema } from "./validation/comment.validation";
+import {
+  addCommentSchema,
+  reactToCommentSchema,
+} from "./validation/comment.validation";
 
 const router = Router({ mergeParams: true });
 //post/postId/comment =>> commenting direct on post
@@ -13,8 +16,23 @@ router.post(
   authenticateUser("strict"),
   validation(reactToCommentSchema.body),
   async (req: Request, res: Response, next: NextFunction) => {
-    await commentService.addReaction(req.body,req.user._id)
+    await commentService.addReaction(req.body, req.user._id);
     res.sendStatus(204);
+  },
+);
+router.get(
+  "{/:parentId}",
+  authenticateUser("strict"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const comments = await commentService.getAllComments(req.params);
+    successResponse({
+      res,
+      message: "All comments fetched successfully",
+      status: 200,
+      data: {
+        comments,
+      },
+    });
   },
 );
 router.post(
