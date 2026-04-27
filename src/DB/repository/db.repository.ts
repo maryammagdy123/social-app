@@ -51,6 +51,9 @@ export abstract class AbstractDBRepository<T> {
   public findByIdAndDelete(id: Types.ObjectId) {
     return this._model.findByIdAndDelete(id);
   }
+  public deleteOne( filter: QueryFilter<T>) {
+    return this._model.deleteOne(filter,);
+  }
 
   public updateOne(
     filter: QueryFilter<T>,

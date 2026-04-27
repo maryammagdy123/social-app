@@ -26,4 +26,14 @@ const commentSchema = new mongoose_1.Schema({
     attachment: String,
     content: String,
 }, { timestamps: true });
+commentSchema.pre("deleteOne", async function () {
+    console.log(this);
+    const filter = this.getFilter();
+    const replies = await this.model.find({ parentId: filter._id });
+    if (replies.length) {
+        for (const reply of replies) {
+            await this.model.deleteOne({ _id: reply._id });
+        }
+    }
+});
 exports.CommentModel = (0, mongoose_1.model)("Comment", commentSchema);

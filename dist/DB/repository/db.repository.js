@@ -26,6 +26,9 @@ class AbstractDBRepository {
     findByIdAndDelete(id) {
         return this._model.findByIdAndDelete(id);
     }
+    deleteOne(filter) {
+        return this._model.deleteOne(filter);
+    }
     updateOne(filter, update, options) {
         return this._model.updateOne(filter, update, options);
     }

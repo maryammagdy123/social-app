@@ -1,6 +1,10 @@
 import { Types } from "mongoose";
 
-import { BadRequestError, NotFoundError } from "../../common/exceptions";
+import {
+  BadRequestError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../../common/exceptions";
 
 import { AddCommentDTO, ReactToCommentDTO } from "./comment.dto";
 import {
@@ -8,7 +12,7 @@ import {
   PostRepository,
   UserReactionRepository,
 } from "../../DB";
-import { ON_MODEL } from "../../common";
+import { IPost, ON_MODEL } from "../../common";
 
 class CommentService {
   constructor(
@@ -132,6 +136,28 @@ class CommentService {
       }
     }
     return;
+  };
+
+  public deleteComment = async (id:Types.ObjectId, userId: Types.ObjectId) => {
+    console.log({id,userId})
+    const comment = await this.commentRepository.findOne(
+      { _id: id },
+      {},
+      { populate: [{ path: "postId" }] },
+    );
+    if (!comment) {
+      throw new NotFoundError("Comment not found!");
+    }
+
+    const postAuthor = (comment.postId as IPost[])[0]?.userId.toString();
+    const commentAuthor = comment.userId.toString();
+    if (![postAuthor, commentAuthor].includes(userId.toString())) {
+      throw new UnauthorizedError(
+        "You are not authorized to delete this comment",
+      );
+    }
+    //delete comment it self and related replies
+    return await this.commentRepository.deleteOne({ _id: id });
   };
 }
 

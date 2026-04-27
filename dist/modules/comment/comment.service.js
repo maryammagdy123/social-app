@@ -94,5 +94,18 @@ class CommentService {
         }
         return;
     };
+    deleteComment = async (id, userId) => {
+        console.log({ id, userId });
+        const comment = await this.commentRepository.findOne({ _id: id }, {}, { populate: [{ path: "postId" }] });
+        if (!comment) {
+            throw new exceptions_1.NotFoundError("Comment not found!");
+        }
+        const postAuthor = comment.postId[0]?.userId.toString();
+        const commentAuthor = comment.userId.toString();
+        if (![postAuthor, commentAuthor].includes(userId.toString())) {
+            throw new exceptions_1.UnauthorizedError("You are not authorized to delete this comment");
+        }
+        return await this.commentRepository.deleteOne({ _id: id });
+    };
 }
 exports.commentService = new CommentService(new DB_1.PostRepository(), new DB_1.CommentRepository(), new DB_1.UserReactionRepository());

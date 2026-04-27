@@ -5,9 +5,16 @@ const middlewares_1 = require("../../middlewares");
 const comment_service_1 = require("./comment.service");
 const response_1 = require("../../common/response");
 const comment_validation_1 = require("./validation/comment.validation");
+const mongoose_1 = require("mongoose");
 const router = (0, express_1.Router)({ mergeParams: true });
 router.post("/react-to-comment", (0, middlewares_1.authenticateUser)("strict"), (0, middlewares_1.validation)(comment_validation_1.reactToCommentSchema.body), async (req, res, next) => {
     await comment_service_1.commentService.addReaction(req.body, req.user._id);
+    res.sendStatus(204);
+});
+router.delete("/:id", (0, middlewares_1.authenticateUser)("strict"), async (req, res, next) => {
+    const userId = req.user._id;
+    console.log(typeof req.params.id);
+    await comment_service_1.commentService.deleteComment(new mongoose_1.Types.ObjectId(req.params.id), userId);
     res.sendStatus(204);
 });
 router.get("{/:parentId}", (0, middlewares_1.authenticateUser)("strict"), async (req, res, next) => {

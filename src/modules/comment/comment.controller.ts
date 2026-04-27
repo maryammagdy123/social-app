@@ -6,6 +6,7 @@ import {
   addCommentSchema,
   reactToCommentSchema,
 } from "./validation/comment.validation";
+import { Types } from "mongoose";
 
 const router = Router({ mergeParams: true });
 //post/postId/comment =>> commenting direct on post
@@ -17,6 +18,19 @@ router.post(
   validation(reactToCommentSchema.body),
   async (req: Request, res: Response, next: NextFunction) => {
     await commentService.addReaction(req.body, req.user._id);
+    res.sendStatus(204);
+  },
+);
+router.delete(
+  "/:id",
+  authenticateUser("strict"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user._id;
+ console.log(typeof req.params.id)
+    await commentService.deleteComment(
+      new Types.ObjectId(req.params.id as string),
+      userId,
+    );
     res.sendStatus(204);
   },
 );
@@ -56,4 +70,5 @@ router.post(
     });
   },
 );
+
 export default router;
