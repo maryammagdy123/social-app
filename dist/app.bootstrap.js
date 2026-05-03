@@ -23,6 +23,7 @@ const bootstrap = async () => {
     app.use("/auth", modules_1.authRouter);
     app.use("/user", user_1.userRouter);
     app.use("/post", modules_1.postRouter);
+    app.use("/request", modules_1.requestRouter);
     app.use("/comment", modules_1.commentRouter);
     app.get("/*dummy", (req, res, next) => {
         res.status(404).json("Not Found");

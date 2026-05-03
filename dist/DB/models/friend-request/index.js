@@ -14,9 +14,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./erequest.interface"), exports);
-__exportStar(require("./user.interface"), exports);
-__exportStar(require("./post.interface"), exports);
-__exportStar(require("./user-reaction.interface"), exports);
-__exportStar(require("./comment.interface"), exports);
-__exportStar(require("./friend-request.interface"), exports);
+__exportStar(require("./friend-request.model"), exports);
+__exportStar(require("./friend-request.repository"), exports);
