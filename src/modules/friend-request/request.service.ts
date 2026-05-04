@@ -14,7 +14,15 @@ class RequestService {
     receiverId: Types.ObjectId, //req params
   ) => {
     //TODO check if blocked user
-    //TODO check if already on friends list
+    // check if already on friends list
+    const friend = await this.userFriendRepository.findOne({
+      $or: [
+        { user: userId, friend: receiverId },
+        { user: receiverId, friend: userId },
+      ],
+    });
+    if (friend)
+      throw new ConflictError("you are already friends with this user");
     //check if already sent a request (sender) , if already received an request (receiver)
     const request = await this.requestRepository.findOne({
       $or: [

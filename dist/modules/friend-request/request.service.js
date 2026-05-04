@@ -11,6 +11,14 @@ class RequestService {
         this.userFriendRepository = userFriendRepository;
     }
     sendRequest = async (userId, receiverId) => {
+        const friend = await this.userFriendRepository.findOne({
+            $or: [
+                { user: userId, friend: receiverId },
+                { user: receiverId, friend: userId },
+            ],
+        });
+        if (friend)
+            throw new exceptions_1.ConflictError("you are already friends with this user");
         const request = await this.requestRepository.findOne({
             $or: [
                 { sender: userId, receiver: receiverId },
