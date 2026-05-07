@@ -7,14 +7,14 @@ const express_1 = __importDefault(require("express"));
 const modules_1 = require("./modules");
 const middlewares_1 = require("./middlewares");
 const DB_1 = require("./DB");
-const services_1 = require("./common/services");
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const user_1 = require("./modules/user");
+const init_1 = require("./common/providers/cache/redis/init");
 const bootstrap = async () => {
     console.log("Bootstrapping the application...");
     const app = (0, express_1.default)();
     await (0, DB_1.authenticateDB)();
-    await services_1.redisService.connect();
+    await init_1.redisService.connect();
     app.use(express_1.default.json());
     app.use((0, cookie_parser_1.default)());
     app.get("/", (req, res, next) => {

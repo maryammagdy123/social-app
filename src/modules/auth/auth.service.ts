@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import {
   EmailEnum,
+  IUser,
   OTP,
-  redisService,
   OTP_KEY_PURPOSE,
   TokenService,
 } from "../../common";
@@ -13,7 +13,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from "../../common/exceptions";
-import { compare, hash,} from "../../common/utils";
+import { compare, hash } from "../../common/utils";
 import { UserRepository } from "../../DB";
 import { ConfirmEmailDTO, LoginDTO, resendOtpDTO, SignupDTO } from "./auth.dto";
 import {
@@ -30,18 +30,21 @@ import { Types } from "mongoose";
 
 import { nodemailerProvider } from "../../common/providers/email/nodemailer/init";
 import { IEmailProvider } from "../../common/providers/email/email.interface";
+import { ICacheProvider } from "../../common/providers/cache/cache.interface";
+import { redisService } from "../../common/providers/cache/redis/init";
 
 class AuthenticationService {
   constructor(
     private readonly emailProvider: IEmailProvider,
     private readonly userRepo: UserRepository,
+    private readonly cacheProvider: ICacheProvider,
   ) {}
 
   public signup = async (signupDTO: SignupDTO): Promise<ISignup> => {
     let { email, password, gender, username } = signupDTO;
     password = await hash(password);
-    const key = redisService.key(email);
-    const userExistInCache = await redisService.checkKeyExistence(key);
+    const key = this.cacheProvider.key(email);
+    const userExistInCache = await this.cacheProvider.checkKeyExistence(key);
     const userExistInDB = await this.userRepo.findOne({ email });
 
     if (userExistInCache === 1) {
@@ -50,7 +53,7 @@ class AuthenticationService {
     if (userExistInDB) {
       throw new BadRequestError("You already have an account ! login instead");
     }
-    await redisService.saveInCache(
+    await this.cacheProvider.set(
       key,
       {
         email,
@@ -61,7 +64,7 @@ class AuthenticationService {
       86400,
     );
 
-    const otp = new OTP(email, this.emailProvider);
+    const otp = new OTP(email, this.emailProvider,this.cacheProvider);
     const generatedOTP = await otp.generateOTP(OTP_KEY_PURPOSE.CONFIRM_EMAIL);
     // await sendOTPEmail(otp.email, generatedOTP, EmailEnum.CONFIRM_EMAIL);
     await this.emailProvider.send(
@@ -86,7 +89,9 @@ class AuthenticationService {
     confirmEmailDTO: ConfirmEmailDTO,
   ): Promise<IConfirmEmail> => {
     let { email, otp } = confirmEmailDTO;
-    const user = await redisService.getFromCache(redisService.key(email));
+    const user = await this.cacheProvider.get<IUser>(
+      this.cacheProvider.key(email),
+    );
     const confirmedInDB = await this.userRepo.findOne({ email });
     if (confirmedInDB?.isConfirmed) {
       throw new BadRequestError("Your account already verified!");
@@ -99,7 +104,7 @@ class AuthenticationService {
     }
 
     //verify otp
-    const verified = await new OTP(email,this.emailProvider).verifyOTP(
+    const verified = await new OTP(email, this.emailProvider,this.cacheProvider).verifyOTP(
       otp,
       OTP_KEY_PURPOSE.CONFIRM_EMAIL,
     );
@@ -108,7 +113,7 @@ class AuthenticationService {
       throw new BadRequestError("Cannot verify account");
     }
     //save user into db  => isConfirmed -- true
-    const createdUser = await this.userRepo.create(user);
+    const createdUser = await this.userRepo.create(user as IUser);
     console.log(createdUser);
 
     const data: IConfirmEmail = {
@@ -117,18 +122,18 @@ class AuthenticationService {
       message: "Account verified successfully",
       data: createdUser,
     };
-await this.emailProvider.send(
-  email,
-  "Account Verified Successfully",
-  `Welcome to our social media app, ${user.username}! We're excited to have you on board. Start connecting with friends and sharing your moments today!`,
-);
+    await this.emailProvider.send(
+      email,
+      "Account Verified Successfully",
+      `Welcome to our social media app, ${(user as IUser).username}! We're excited to have you on board. Start connecting with friends and sharing your moments today!`,
+    );
     return data;
   };
 
   public resendOtp = async (resendOtpDTO: resendOtpDTO): Promise<void> => {
     const { email, type } = resendOtpDTO;
-    const key = redisService.key(email);
-    const userExistInCache = await redisService.checkKeyExistence(key);
+    const key = this.cacheProvider.key(email);
+    const userExistInCache = await this.cacheProvider.checkKeyExistence(key);
     console.log(userExistInCache);
     const userExistInDB = await this.userRepo.findOne({ email });
     if (!userExistInCache && !userExistInDB) {
@@ -137,7 +142,10 @@ await this.emailProvider.send(
     if (userExistInDB && type === EmailEnum.CONFIRM_EMAIL) {
       throw new BadRequestError("Cannot resend code!");
     }
-    await new OTP(email, this.emailProvider).resendOtp(OTP_KEY_PURPOSE.CONFIRM_EMAIL, type);
+    await new OTP(email, this.emailProvider,this.cacheProvider).resendOtp(
+      OTP_KEY_PURPOSE.CONFIRM_EMAIL,
+      type,
+    );
   };
 
   public login = async (loginDTO: LoginDTO): Promise<ILoginResponse> => {
@@ -178,7 +186,7 @@ await this.emailProvider.send(
     };
 
     //saving session - hash refresh token(todo)
-    await redisService.saveSessions(
+    await this.cacheProvider.saveSessions(
       userExist._id,
       sessionId,
       await hash(refreshToken),
@@ -199,16 +207,16 @@ await this.emailProvider.send(
     if (!decoded) {
       throw new BadRequestError("Invalid token");
     }
-    const stored = await redisService.getFromCache(
-      redisService.sessionKey(decoded.id, decoded.sessionId),
+    const stored = await this.cacheProvider.get(
+      this.cacheProvider.sessionKey(decoded.id, decoded.sessionId),
     );
-    const isMatch = await compare(refreshToken, stored);
+    const isMatch = await compare(refreshToken, stored as string);
     if (!stored || !isMatch) {
       throw new BadRequestError("Invalid session, please login again");
     }
     //  delete the old one
-    await redisService.deleteFromCache(
-      redisService.sessionKey(decoded.id, decoded.sessionId),
+    await this.cacheProvider.delete(
+      this.cacheProvider.sessionKey(decoded.id, decoded.sessionId),
     );
     //delete set
 
@@ -229,7 +237,11 @@ await this.emailProvider.send(
       }),
     };
     //saving new sessions
-    await redisService.saveSessions(decoded.id, sessionId, data.refreshToken);
+    await this.cacheProvider.saveSessions(
+      decoded.id,
+      sessionId,
+      data.refreshToken,
+    );
 
     return data;
   };
@@ -242,8 +254,8 @@ await this.emailProvider.send(
       ACCESS_TOKEN_SECRET_KEY as string,
     );
 
-    const deleted = await redisService.deleteFromCache(
-      redisService.sessionKey(decoded?.id, decoded?.sessionId),
+    const deleted = await this.cacheProvider.delete(
+      this.cacheProvider.sessionKey(decoded?.id, decoded?.sessionId),
     );
     if (!deleted) {
       throw new BadRequestError("Something went wrong, already  logged out !");
@@ -251,10 +263,12 @@ await this.emailProvider.send(
     return true;
   };
   public logoutAllSessions = async (userId: Types.ObjectId) => {
-    const sessions = await redisService.sMembers(`user_sessions:${userId}`);
+    const sessions = await this.cacheProvider.sMembers(
+      `user_sessions:${userId}`,
+    );
 
     for (const s of sessions) {
-      await redisService.deleteFromCache(`refresh:${userId}:${s}`);
+      await this.cacheProvider.delete(this.cacheProvider.sessionKey(userId, s));
     }
   };
 }
@@ -262,4 +276,5 @@ await this.emailProvider.send(
 export default new AuthenticationService(
   nodemailerProvider,
   new UserRepository(),
+  redisService,
 );

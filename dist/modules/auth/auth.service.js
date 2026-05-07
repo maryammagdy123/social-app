@@ -7,18 +7,21 @@ const utils_1 = require("../../common/utils");
 const DB_1 = require("../../DB");
 const config_1 = require("../../config");
 const init_1 = require("../../common/providers/email/nodemailer/init");
+const init_2 = require("../../common/providers/cache/redis/init");
 class AuthenticationService {
     emailProvider;
     userRepo;
-    constructor(emailProvider, userRepo) {
+    cacheProvider;
+    constructor(emailProvider, userRepo, cacheProvider) {
         this.emailProvider = emailProvider;
         this.userRepo = userRepo;
+        this.cacheProvider = cacheProvider;
     }
     signup = async (signupDTO) => {
         let { email, password, gender, username } = signupDTO;
         password = await (0, utils_1.hash)(password);
-        const key = common_1.redisService.key(email);
-        const userExistInCache = await common_1.redisService.checkKeyExistence(key);
+        const key = this.cacheProvider.key(email);
+        const userExistInCache = await this.cacheProvider.checkKeyExistence(key);
         const userExistInDB = await this.userRepo.findOne({ email });
         if (userExistInCache === 1) {
             throw new exceptions_1.ConflictError("This email is already in use!");
@@ -26,13 +29,13 @@ class AuthenticationService {
         if (userExistInDB) {
             throw new exceptions_1.BadRequestError("You already have an account ! login instead");
         }
-        await common_1.redisService.saveInCache(key, {
+        await this.cacheProvider.set(key, {
             email,
             password,
             gender,
             username,
         }, 86400);
-        const otp = new common_1.OTP(email, this.emailProvider);
+        const otp = new common_1.OTP(email, this.emailProvider, this.cacheProvider);
         const generatedOTP = await otp.generateOTP(common_1.OTP_KEY_PURPOSE.CONFIRM_EMAIL);
         await this.emailProvider.send(otp.email, common_1.EmailEnum.CONFIRM_EMAIL, `Your OTP code is: ${generatedOTP}`);
         const data = {
@@ -49,7 +52,7 @@ class AuthenticationService {
     };
     verifyAccount = async (confirmEmailDTO) => {
         let { email, otp } = confirmEmailDTO;
-        const user = await common_1.redisService.getFromCache(common_1.redisService.key(email));
+        const user = await this.cacheProvider.get(this.cacheProvider.key(email));
         const confirmedInDB = await this.userRepo.findOne({ email });
         if (confirmedInDB?.isConfirmed) {
             throw new exceptions_1.BadRequestError("Your account already verified!");
@@ -57,7 +60,7 @@ class AuthenticationService {
         if (user === null) {
             throw new exceptions_1.NotFoundError("No such account found please create account first!");
         }
-        const verified = await new common_1.OTP(email, this.emailProvider).verifyOTP(otp, common_1.OTP_KEY_PURPOSE.CONFIRM_EMAIL);
+        const verified = await new common_1.OTP(email, this.emailProvider, this.cacheProvider).verifyOTP(otp, common_1.OTP_KEY_PURPOSE.CONFIRM_EMAIL);
         if (!verified) {
             throw new exceptions_1.BadRequestError("Cannot verify account");
         }
@@ -74,8 +77,8 @@ class AuthenticationService {
     };
     resendOtp = async (resendOtpDTO) => {
         const { email, type } = resendOtpDTO;
-        const key = common_1.redisService.key(email);
-        const userExistInCache = await common_1.redisService.checkKeyExistence(key);
+        const key = this.cacheProvider.key(email);
+        const userExistInCache = await this.cacheProvider.checkKeyExistence(key);
         console.log(userExistInCache);
         const userExistInDB = await this.userRepo.findOne({ email });
         if (!userExistInCache && !userExistInDB) {
@@ -84,7 +87,7 @@ class AuthenticationService {
         if (userExistInDB && type === common_1.EmailEnum.CONFIRM_EMAIL) {
             throw new exceptions_1.BadRequestError("Cannot resend code!");
         }
-        await new common_1.OTP(email, this.emailProvider).resendOtp(common_1.OTP_KEY_PURPOSE.CONFIRM_EMAIL, type);
+        await new common_1.OTP(email, this.emailProvider, this.cacheProvider).resendOtp(common_1.OTP_KEY_PURPOSE.CONFIRM_EMAIL, type);
     };
     login = async (loginDTO) => {
         const token = new common_1.TokenService();
@@ -117,7 +120,7 @@ class AuthenticationService {
                 refreshToken,
             },
         };
-        await common_1.redisService.saveSessions(userExist._id, sessionId, await (0, utils_1.hash)(refreshToken));
+        await this.cacheProvider.saveSessions(userExist._id, sessionId, await (0, utils_1.hash)(refreshToken));
         return data;
     };
     refreshToken = async (refreshToken) => {
@@ -128,12 +131,12 @@ class AuthenticationService {
         if (!decoded) {
             throw new exceptions_1.BadRequestError("Invalid token");
         }
-        const stored = await common_1.redisService.getFromCache(common_1.redisService.sessionKey(decoded.id, decoded.sessionId));
+        const stored = await this.cacheProvider.get(this.cacheProvider.sessionKey(decoded.id, decoded.sessionId));
         const isMatch = await (0, utils_1.compare)(refreshToken, stored);
         if (!stored || !isMatch) {
             throw new exceptions_1.BadRequestError("Invalid session, please login again");
         }
-        await common_1.redisService.deleteFromCache(common_1.redisService.sessionKey(decoded.id, decoded.sessionId));
+        await this.cacheProvider.delete(this.cacheProvider.sessionKey(decoded.id, decoded.sessionId));
         const sessionId = (0, node_crypto_1.randomUUID)();
         const data = {
             accessToken: tokenService.generateAccessToken({
@@ -147,23 +150,23 @@ class AuthenticationService {
                 sessionId,
             }),
         };
-        await common_1.redisService.saveSessions(decoded.id, sessionId, data.refreshToken);
+        await this.cacheProvider.saveSessions(decoded.id, sessionId, data.refreshToken);
         return data;
     };
     sessionLogout = async (token) => {
         const tokenService = new common_1.TokenService();
         const decoded = tokenService.verifyToken(token, config_1.ACCESS_TOKEN_SECRET_KEY);
-        const deleted = await common_1.redisService.deleteFromCache(common_1.redisService.sessionKey(decoded?.id, decoded?.sessionId));
+        const deleted = await this.cacheProvider.delete(this.cacheProvider.sessionKey(decoded?.id, decoded?.sessionId));
         if (!deleted) {
             throw new exceptions_1.BadRequestError("Something went wrong, already  logged out !");
         }
         return true;
     };
     logoutAllSessions = async (userId) => {
-        const sessions = await common_1.redisService.sMembers(`user_sessions:${userId}`);
+        const sessions = await this.cacheProvider.sMembers(`user_sessions:${userId}`);
         for (const s of sessions) {
-            await common_1.redisService.deleteFromCache(`refresh:${userId}:${s}`);
+            await this.cacheProvider.delete(this.cacheProvider.sessionKey(userId, s));
         }
     };
 }
-exports.default = new AuthenticationService(init_1.nodemailerProvider, new DB_1.UserRepository());
+exports.default = new AuthenticationService(init_1.nodemailerProvider, new DB_1.UserRepository(), init_2.redisService);

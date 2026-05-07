@@ -12,9 +12,10 @@ import {
 } from "./modules";
 import { globalErrorHandler } from "./middlewares";
 import { authenticateDB } from "./DB";
-import { redisService } from "./common/services";
+
 import cookieParser from "cookie-parser";
 import { userRouter } from "./modules/user";
+import { redisService } from "./common/providers/cache/redis/init";
 const bootstrap = async () => {
   console.log("Bootstrapping the application...");
   const app: express.Express = express();
