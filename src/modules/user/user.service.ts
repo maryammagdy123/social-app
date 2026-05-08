@@ -1,4 +1,5 @@
-import { redisService, TokenService } from "../../common";
+import { TokenService } from "../../common";
+import { redisService } from "../../common/providers/cache/redis/init";
 import { BadRequestError, NotFoundError } from "../../common/exceptions";
 import { REFRESH_TOKEN_SECRET_KEY } from "../../config";
 
@@ -11,7 +12,7 @@ export class UserService {
       REFRESH_TOKEN_SECRET_KEY as string,
     );
 
-    const deleted = await redisService.deleteFromCache(
+    const deleted = await redisService.delete(
       redisService.sessionKey(decoded?.id, decoded?.sessionId),
     );
     if (

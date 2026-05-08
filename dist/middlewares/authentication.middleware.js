@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.authenticateUser = void 0;
 const common_1 = require("../common");
+const init_1 = require("../common/providers/cache/redis/init");
 const exceptions_1 = require("../common/exceptions");
 const config_1 = require("../config");
 const DB_1 = require("../DB");
@@ -28,9 +29,9 @@ const authenticateUser = (mode = "strict", roles = []) => {
             if (!user) {
                 throw new exceptions_1.NotFoundError("User Not found");
             }
-            const isSessionValid = await common_1.redisService.sIsMember(common_1.redisService.allSessionsSetKey(id), sessionId);
+            const isSessionValid = await init_1.redisService.sIsMember(init_1.redisService.allSessionsSetKey(id), sessionId);
             if (!isSessionValid) {
-                await common_1.redisService.deleteFromCache(common_1.redisService.sessionKey(id, sessionId));
+                await init_1.redisService.delete(init_1.redisService.sessionKey(id, sessionId));
                 throw new exceptions_1.BadRequestError("Session expired , login again !");
             }
             req.user = user;

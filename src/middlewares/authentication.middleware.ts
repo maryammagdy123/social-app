@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import { redisService, RoleEnum, TokenService } from "../common";
+import { RoleEnum, TokenService } from "../common";
+import { redisService } from "../common/providers/cache/redis/init";
 import {
   BadRequestError,
   ForbiddenError,
@@ -46,7 +47,7 @@ export const authenticateUser = (
         sessionId,
       );
       if (!isSessionValid) {
-        await redisService.deleteFromCache(
+        await redisService.delete(
           redisService.sessionKey(id, sessionId),
         );
         throw new BadRequestError("Session expired , login again !");

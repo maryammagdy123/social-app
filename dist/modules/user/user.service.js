@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userService = exports.UserService = void 0;
 const common_1 = require("../../common");
+const init_1 = require("../../common/providers/cache/redis/init");
 const exceptions_1 = require("../../common/exceptions");
 const config_1 = require("../../config");
 class UserService {
@@ -11,8 +12,8 @@ class UserService {
     }
     sessionLogout = async (token) => {
         const decoded = this.tokenService.verifyToken(token, config_1.REFRESH_TOKEN_SECRET_KEY);
-        const deleted = await common_1.redisService.deleteFromCache(common_1.redisService.sessionKey(decoded?.id, decoded?.sessionId));
-        if (!(await common_1.redisService.sRem(common_1.redisService.allSessionsSetKey(decoded?.id), decoded?.sessionId))) {
+        const deleted = await init_1.redisService.delete(init_1.redisService.sessionKey(decoded?.id, decoded?.sessionId));
+        if (!(await init_1.redisService.sRem(init_1.redisService.allSessionsSetKey(decoded?.id), decoded?.sessionId))) {
             throw new exceptions_1.NotFoundError("session already expired");
         }
         if (!deleted) {
@@ -23,8 +24,8 @@ class UserService {
     logoutAllSessions = async (token) => {
         const decoded = this.tokenService.verifyToken(token, config_1.REFRESH_TOKEN_SECRET_KEY);
         const userId = decoded?.id;
-        const sessions = await common_1.redisService.sMembers(common_1.redisService.allSessionsSetKey(userId));
-        await Promise.all(sessions.map((sessionId) => common_1.redisService.sRem(common_1.redisService.allSessionsSetKey(userId), sessionId)));
+        const sessions = await init_1.redisService.sMembers(init_1.redisService.allSessionsSetKey(userId));
+        await Promise.all(sessions.map((sessionId) => init_1.redisService.sRem(init_1.redisService.allSessionsSetKey(userId), sessionId)));
         return true;
     };
 }
