@@ -64,7 +64,7 @@ class AuthenticationService {
       86400,
     );
 
-    const otp = new OTP(email, this.emailProvider,this.cacheProvider);
+    const otp = new OTP(email, this.emailProvider, this.cacheProvider);
     const generatedOTP = await otp.generateOTP(OTP_KEY_PURPOSE.CONFIRM_EMAIL);
     // await sendOTPEmail(otp.email, generatedOTP, EmailEnum.CONFIRM_EMAIL);
     await this.emailProvider.send(
@@ -104,10 +104,11 @@ class AuthenticationService {
     }
 
     //verify otp
-    const verified = await new OTP(email, this.emailProvider,this.cacheProvider).verifyOTP(
-      otp,
-      OTP_KEY_PURPOSE.CONFIRM_EMAIL,
-    );
+    const verified = await new OTP(
+      email,
+      this.emailProvider,
+      this.cacheProvider,
+    ).verifyOTP(otp, OTP_KEY_PURPOSE.CONFIRM_EMAIL);
 
     if (!verified) {
       throw new BadRequestError("Cannot verify account");
@@ -142,7 +143,7 @@ class AuthenticationService {
     if (userExistInDB && type === EmailEnum.CONFIRM_EMAIL) {
       throw new BadRequestError("Cannot resend code!");
     }
-    await new OTP(email, this.emailProvider,this.cacheProvider).resendOtp(
+    await new OTP(email, this.emailProvider, this.cacheProvider).resendOtp(
       OTP_KEY_PURPOSE.CONFIRM_EMAIL,
       type,
     );
@@ -162,6 +163,10 @@ class AuthenticationService {
     const passwordCompared = await compare(password, userExist.password);
     if (!passwordCompared) {
       throw new ForbiddenError("Email or password is incorrect ");
+    }
+    //integrate with firebase for notifications
+    if (loginDTO.FCM) {
+      await this.cacheProvider.addToSet(`${userExist._id}:FCM`, loginDTO.FCM);
     }
 
     const accessToken = token.generateAccessToken({
@@ -246,7 +251,12 @@ class AuthenticationService {
     return data;
   };
 
+  //logout from specific device (session)
   public sessionLogout = async (token: string) => {
+    /**
+     * TODO  1- delete FCM token from set of FCM tokens for this user (if exist)
+     * TODO 2- integrate with firebase to delete device token from firebase to stop sending notifications to this device
+     */
     const tokenService = new TokenService();
 
     const decoded = tokenService.verifyToken(
@@ -262,6 +272,7 @@ class AuthenticationService {
     }
     return true;
   };
+  //logout from all devices (sessions)
   public logoutAllSessions = async (userId: Types.ObjectId) => {
     const sessions = await this.cacheProvider.sMembers(
       `user_sessions:${userId}`,
