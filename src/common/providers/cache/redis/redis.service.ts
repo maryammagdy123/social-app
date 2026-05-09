@@ -26,7 +26,7 @@ export class RedisService implements ICacheProvider {
       await this.redisClient.connect();
     }
   }
-  async get<T>(key: string): Promise<T |string| null> {
+  async get<T>(key: string): Promise<T | string | null> {
     const cached = await this.redisClient.get(key);
     if (!cached) return null;
     try {
@@ -104,5 +104,8 @@ export class RedisService implements ICacheProvider {
   };
   public keys = async (userId: Types.ObjectId) => {
     return await this.redisClient.keys(`refresh:${userId}:*`);
+  };
+  public  async addToSet(key: string, value: string): Promise<void> {
+     await this.redisClient.sAdd(key, value);
   };
 }
