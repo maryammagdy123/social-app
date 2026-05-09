@@ -5,4 +5,5 @@ export interface ICacheProvider extends IAuthRedisProvider {
   set(key: string, value: any, ttl?: number): Promise<void>;
   delete(key: string | string[]): Promise<number>;
   clear(): Promise<string | null>;
+  addToSet(key: string, value: string): Promise<void>;
 }
