@@ -15,9 +15,17 @@ class FirebasePushNotificationProvider implements INotificationProvider {
   ): Promise<void> {
     this.client.messaging().send({
       token,
-      data
+      data,
+    });
+  }
+  async sendMultiple(
+    tokens: string[],
+    data: { title: string; body: string },
+  ): Promise<void> {
+    this.client.messaging().sendEachForMulticast({
+      tokens,
+      data,
     });
   }
 }
-
 export default FirebasePushNotificationProvider;
