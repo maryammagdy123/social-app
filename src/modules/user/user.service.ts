@@ -9,6 +9,7 @@ import { REFRESH_TOKEN_SECRET_KEY } from "../../config";
 import { Types } from "mongoose";
 import { PostRepository, UserFriendRepository, UserRepository } from "../../DB";
 import { BlockRepository } from "../../DB/models/block/block.repository";
+import { IProfileResponse } from "./user.entities";
 
 export class UserService {
   constructor(
@@ -111,6 +112,19 @@ export class UserService {
     }
     const posts = await this.postRepo.find({ userId: profileOwnerId });
     return { user, posts };
+  };
+
+  public myProfile = async (me: Types.ObjectId): Promise<IProfileResponse> => {
+    const user = await this.userRepo.findById(me);
+    const posts = await this.postRepo.find({ userId: me });
+    const friends = await this.friendsRepo.find({ user: me }).populate("friends");
+
+     const data:IProfileResponse = {
+      userProfile: user!,
+      posts,
+      friends: friends.map((f) => f.friend as any),
+    };
+    return data;
   };
 }
 export const userService = new UserService(

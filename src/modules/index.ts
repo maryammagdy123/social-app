@@ -4,3 +4,4 @@ export * from "./comment";
 export * from "./post";
 export * from "./friend-request";
 export * from "./user-friends";
+export * from "./graphql";
