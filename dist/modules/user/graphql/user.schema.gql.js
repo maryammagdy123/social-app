@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userGQLSchema = void 0;
-const user_resolver_gql_1 = require("./user.resolver.gql");
+const user_resolver_1 = require("./user.resolver");
 const user_types_gql_1 = require("./user.types.gql");
 class UserGQLSchema {
     userResolver;
@@ -44,4 +44,4 @@ class UserGQLSchema {
         };
     }
 }
-exports.userGQLSchema = new UserGQLSchema(user_resolver_gql_1.userResolver);
+exports.userGQLSchema = new UserGQLSchema(user_resolver_1.userResolver);

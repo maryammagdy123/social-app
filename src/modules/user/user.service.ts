@@ -1,4 +1,4 @@
-import { IUser, ProfilePrivacy, TokenService } from "../../common";
+import { IUser, ProfilePrivacy, TokenService, UserDocument } from "../../common";
 import { redisService } from "../../common/providers/cache/redis/init";
 import {
   BadRequestError,
@@ -114,16 +114,34 @@ export class UserService {
     return { user, posts };
   };
 
+
+
   public myProfile = async (me: Types.ObjectId): Promise<IProfileResponse> => {
     const [user, posts, friends] = await Promise.all([
       this.userRepo.findById(me),
       this.postRepo.find({ userId: me }),
-      this.friendsRepo.find({ user: me }).populate<{ friend: IUser }>("friend"),
+       this.friendsRepo
+      .find({
+        $or: [
+          { user: me },
+          { friend: me },
+        ],
+      })
+      .populate<{ user:UserDocument; friend: IUser }>([
+        "user",
+        "friend",
+      ]),
     ]);
     return {
       userProfile: user!,
       posts,
-      friends: friends.map((f) => f.friend),
+
+    friends: friends.map((f) => {
+      return f.user._id.toString() === me.toString()
+        ? f.friend
+        : f.user;
+    }),
+
     };
   };
 }
